@@ -4,11 +4,11 @@ Citizen.CreateThread(function()
     while true do
         Citizen.Wait(Config.CheckTime)
 
-        local playerPed = PlayerPedId()
+        local playerped = PlayerPedId()
 
         -- On vérifie si le joueur est dans un véhicule
-        if IsPedInAnyVehicle(playerPed, false) then
-            local vehicle = GetVehiclePedIsIn(playerPed, false)
+        if IsPedInAnyVehicle(playerped, false) then
+            local vehicle = GetVehiclePedIsIn(playerped, false)
             local speed = GetEntitySpeed(vehicle) * 3.6
 
             -- Debug : On utilise la variable 'speed' qu'on vient de créer
