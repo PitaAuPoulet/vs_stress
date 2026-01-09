@@ -1,9 +1,13 @@
-fx_version:´cerulean'
-description: -- petit script de gestion du stress standalone
-game:´gta5'
+fx_version "cerulean"
+game "gta5"
+description "petit script de gestion du stress standalone"
+author "vitaswift - vs_team"
 
-client_script:{
-´client.lua'
-}
 
-lua54: 'yes'
+shared_script "config.lua"
+
+
+client_script "client.lua"
+
+
+lua54"yes"
