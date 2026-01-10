@@ -1,26 +1,73 @@
-local currentStress = 0 -- On garde la variable ici pour ne pas la perdre
+local currentStress = 0
 
 Citizen.CreateThread(function()
     while true do
+        -- On attend le temps défini dans le config (optimisation des performances)
         Citizen.Wait(Config.CheckTime)
+        
+        local playerPed = PlayerPedId()
 
-        local playerped = PlayerPedId()
-
-        -- On vérifie si le joueur est dans un véhicule
-        if IsPedInAnyVehicle(playerped, false) then
-            local vehicle = GetVehiclePedIsIn(playerped, false)
+        -- CONDITION PRINCIPALE : LE JOUEUR EST EN VOITURE
+        if IsPedInAnyVehicle(playerPed, false) then
+            local vehicle = GetVehiclePedIsIn(playerPed, false)
             local speed = GetEntitySpeed(vehicle) * 3.6
 
-            -- Debug : On utilise la variable 'speed' qu'on vient de créer
-            if Config.Debug then 
-                print("Ma vitesse est de : " .. speed .. " km/h")
-            end
-
-            -- Si la vitesse dépasse la limite du config
+            -- BLOC A : CALCUL DU STRESS (MONTÉE ET DESCENTE)
             if speed > Config.LimitSpeed then 
                 currentStress = currentStress + Config.StressAdd
-                print("DEBUG: Stress Ajouté ! Stress Actuel: " .. currentStress)
+                
+                -- On limite le maximum
+                if currentStress > Config.MaxStress then 
+                    currentStress = Config.MaxStress 
+                end
+
+            elseif speed < 20 and currentStress > 0 then
+                -- On décompresse si on roule doucement ou à l'arrêt
+                currentStress = currentStress - 1
+                if currentStress < 0 then currentStress = 0 end
+            end
+
+            -- BLOC B : GESTION DES EFFETS VISUELS
+            
+            -- 1. Le tremblement (Shake)
+            if currentStress > 10 then
+                if not IsGameplayCamShaking() then
+                    ShakeGameplayCam('ROAD_VIBRATION_SHAKE', 1.0)
+                end
+            else
+                StopGameplayCamShaking(true)
+            end
+
+            -- 2. Le flou de panique (FocusOut)
+            if currentStress > Config.HighStressLevel then
+                if not AnimpostfxIsRunning('FocusOut') then
+                    AnimpostfxPlay('FocusOut', 0, true)
+                end
+            else
+                if AnimpostfxIsRunning('FocusOut') then
+                    AnimpostfxStop('FocusOut')
+                end
+            end
+
+            -- DEBUG CONSOLE (F8)
+            if Config.Debug then
+                print("Vitesse: " .. math.floor(speed) .. " km/h | Stress Actuel: " .. currentStress)
+            end
+
+        else
+            -- SI LE JOUEUR SORT DU VÉHICULE
+            -- Le stress descend lentement à pied pour l'immersion
+            if currentStress > 0 then
+                currentStress = currentStress - 0.5
+            end
+            
+            -- On coupe les effets visuels immédiatement par sécurité
+            if IsGameplayCamShaking() then
+                StopGameplayCamShaking(true)
+            end
+            if AnimpostfxIsRunning('FocusOut') then
+                AnimpostfxStop('FocusOut')
             end
         end 
-    end -- Fin du while
-end) -- Fin du Thread
+    end
+end)
